@@ -25,8 +25,8 @@ testdata$subject <- testsubject$V1
 traindata$subject <- trainsubject$V1
 
 ## Adding labels to test and train activities
-testactivity <- merge(testactivity,activity)
-trainactivity <- merge(trainactivity,activity)
+testactivity$V2 <- as.character(lapply(testactivity$V1, function(x) as.character(activity$V2[[x]])))
+trainactivity$V2 <- as.character(lapply(trainactivity$V1, function(x) as.character(activity$V2[[x]])))
 
 ## Adding a column indicating the activity for each observation
 testdata$activity <- testactivity$V2
@@ -41,20 +41,28 @@ tidydataset <- rbind(testdata,traindata)
 ##
 
 ## Removing subject and activity to calculate mean, standard deviation and average
-rawmdata <- mergeddata[,-c("subject","activity")]
+alldata <- tidydataset[,-c("subject","activity")]
 
-## Calculating mean for each variable
-mean <- sapply(rawmdata,mean)
-stddeviation <- sapply(rawmdata,sd)
+allnames <- names(alldata)
+keepnames <- allnames[grepl(allnames,pattern = ".*(mean\\(|std\\().*")]
 
-## Creating a matrix with only mean and standard deviation for each variable
-sumdata <- rbind(mean = mean, sd = stddeviation)
+meanstddata <- alldata[,..keepnames]
+
+meanstddata$subject <- tidydataset$subject
+meanstddata$activity <- tidydataset$activity
+
+
+tidydataset <- meanstddata
 
 ##
-## This ends step 2 (sumdata has only two rows, mean and rd. The rowns are named
-##                   and the variables also have names)
+## This ends step 2 (tidydataset has only rows with mean and rd measurements.
+##                   The rowns are named and the variables also have names)
 ##
 
-meandataset <- tidydataset[, lapply(.SD,mean), by=list(subject,activity)]
-meandataset <- meandataset[order(subject,activity)]
+meandataset <- tidydataset[, lapply(.SD,mean), keyby=.(subject,activity)]
 write.table(meandataset, file = "tidydataset.txt", row.name=FALSE)
+
+##
+## This ends step 5 and save the meandataset to the file.
+##
+

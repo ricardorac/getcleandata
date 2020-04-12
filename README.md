@@ -55,8 +55,8 @@ traindata$subject <- trainsubject$V1
 
 And finally it merges the activity labels with the activities recorded for train and test datasets and adds a column indicating the activity for each observation.
 ```
-testactivity <- merge(testactivity,activity)
-trainactivity <- merge(trainactivity,activity)
+testactivity$V2 <- as.character(lapply(testactivity$V1, function(x) as.character(activity$V2[[x]])))
+trainactivity$V2 <- as.character(lapply(trainactivity$V1, function(x) as.character(activity$V2[[x]])))
 testdata$activity <- testactivity$V2
 traindata$activity <- trainactivity$V2
 ```
@@ -70,20 +70,22 @@ tidydataset <- rbind(testdata,traindata)
 
 This end steps 1, 3 and 4 of the exercise, as the tidydataset has a column for activity and for subject and also names for each variable.
 
-### Removing subject and activity to calculate mean and standard deviation
+### Removing subject and activity to keep mean and standard deviation measurements
 
-To calculate the mean and standard deviation of each observation I had to remove the added columns (subject and activity) and save it in a new data table.
-```
-rawmdata <- mergeddata[,-c("subject","activity")]
-```
-
-### Calculating mean and standard deviation for each variable
-After stripping these two columns, I calculated mean and sd for each other column and merged the resulting vectors into a matrix, with all column names maintained and two rows, one for each measure.
+To keep only the mean and standard deviation measurements I opted to remove the added columns (subject and activity) and save it in a new data table. After that I removed all measurements that had no mean or std in its name, readded the columns subject and activity and reassigned the datable to tidydataset
 
 ```
-mean <- sapply(rawmdata,mean)
-stddeviation <- sapply(rawmdata,sd)
-sumdata <- rbind(mean = mean, sd = stddeviation)
+alldata <- tidydataset[,-c("subject","activity")]
+
+allnames <- names(alldata)
+keepnames <- allnames[grepl(allnames,pattern = ".*(mean|std).*")]
+
+meanstddata <- alldata[,..keepnames]
+
+meanstddata$subject <- tidydataset$subject
+meanstddata$activity <- tidydataset$activity
+
+tidydataset <- meanstddata
 ```
 
 ### Creating the tidy data set
